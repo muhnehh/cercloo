@@ -1,0 +1,26 @@
+check_id,rule_name,severity,source_file,emp_no,field_checked,field_value,expected_min,expected_max,should_flag,violation_type,law_article_ref,explanation
+CHK001,overtime_rate_minimum,ERROR,payroll_run,EMP003,ot_rate_multiplier,1.0,1.25,,true,BELOW_MINIMUM,UAE Labour Law Art.67,Overtime must be paid at minimum 1.25x the regular hourly rate. EMP003 was paid at 1.0x for 20 hours.
+CHK002,overtime_rate_minimum,ERROR,payroll_run,EMP011,ot_rate_multiplier,1.0,1.25,,true,BELOW_MINIMUM,UAE Labour Law Art.67,EMP011 paid 1.0x overtime rate for 30 hours. Legal minimum is 1.25x.
+CHK003,overtime_rate_minimum,ERROR,payroll_run,EMP018,ot_rate_multiplier,1.1,1.25,,true,BELOW_MINIMUM,UAE Labour Law Art.67,EMP018 paid 1.1x overtime rate. Legal minimum is 1.25x weekdays.
+CHK004,overtime_rate_minimum,PASS,payroll_run,EMP001,ot_rate_multiplier,1.25,1.25,,false,COMPLIANT,UAE Labour Law Art.67,Overtime rate at minimum legal requirement.
+CHK005,overtime_rate_minimum,PASS,payroll_run,EMP005,ot_rate_multiplier,1.25,1.25,,false,COMPLIANT,UAE Labour Law Art.67,Overtime rate at minimum legal requirement.
+CHK006,annual_leave_entitlement,WARNING,leave_records,EMP006,annual_entitlement,2,,30,false,INFO,UAE Labour Law Art.75,Employee in first year accrues 2 days/month. Annual entitlement of 2 is correct for <6 months service. Monitor.
+CHK007,annual_leave_entitlement,ERROR,leave_records,EMP015,leave_balance,1,,,true,BELOW_MINIMUM,UAE Labour Law Art.75,Employee with 0.2 years service took 3 annual leave days. Entitlement is 2 days/month accrual. Balance check needed.
+CHK008,annual_leave_entitlement,PASS,leave_records,EMP001,annual_entitlement,30,30,,false,COMPLIANT,UAE Labour Law Art.75,Employee with 4.8 years service has correct 30 day entitlement.
+CHK009,carry_forward_limit,WARNING,leave_records,EMP013,carry_fwd_days,10,0,30,false,WITHIN_LIMIT,UAE Labour Law Art.75,Carry forward of 10 days is within 30 day limit but should be monitored.
+CHK010,carry_forward_limit,ERROR,leave_records,EMP022,carry_fwd_days,8,0,30,false,WITHIN_LIMIT,UAE Labour Law Art.75,Carry forward within limit but historical record shows balance reached 38 - exceeded 30 day cap.
+CHK011,missing_visa_info,ERROR,employee_master,EMP003,visa_exp,10/01/2024,,,true,EXPIRED,UAE Entry Permit Regulations,Work permit for EMP003 expired 10/01/2024. Employee may be working illegally. Immediate renewal required.
+CHK012,missing_visa_info,WARNING,employee_master,EMP009,visa_exp,01/09/2024,,,true,EXPIRING_SOON,UAE Entry Permit Regulations,Residence visa expiring 01/09/2024. Renew at least 30 days before expiry.
+CHK013,missing_visa_info,WARNING,employee_master,EMP004,visa_exp,05/08/2024,,,true,EXPIRING_SOON,UAE Entry Permit Regulations,Employment visa expiring 05/08/2024. Less than 60 days remaining.
+CHK014,missing_national_id,ERROR,employee_master,EMP002,national_id,,,,true,MISSING_FIELD,UAE Labour Law,Non-UAE national must have visa type recorded. Emirates ID blank - acceptable for expat but passport details must be complete.
+CHK015,missing_iban,WARNING,employee_master,EMP011,iban_no,,,,true,MISSING_FIELD,UAE WPS Regulations,WPS payment requires valid IBAN. EMP011 missing IBAN - cannot process WPS payment.
+CHK016,missing_iban,WARNING,employee_master,EMP015,iban_no,,,,true,MISSING_FIELD,UAE WPS Regulations,EMP015 missing IBAN number for WPS processing.
+CHK017,probation_period_max,PASS,employee_master,EMP002,probation_end,15-Jan-2022,,,false,COMPLIANT,UAE Labour Law Art.37,Probation of 6 months from 15-Jul-2021 is at legal maximum. Compliant.
+CHK018,probation_period_max,PASS,employee_master,EMP004,probation_end,05-Feb-2023,,,false,COMPLIANT,UAE Labour Law Art.37,Probation of 6 months from 05-Aug-2022 is at legal maximum. Compliant.
+CHK019,notice_period_minimum,WARNING,employee_master,EMP009,notice_per,60,30,,false,ABOVE_MINIMUM,UAE Labour Law Art.43,Notice period of 60 days exceeds 30 day minimum. Compliant but above standard.
+CHK020,wps_payment_method,ERROR,payroll_run,EMP016,payment_method,WPS,,,false,COMPLIANT,UAE WPS Regulations,CEO paid via WPS. Compliant.
+CHK021,gratuity_calculation,WARNING,employee_master,EMP003,yr_of_service,4.9,,,false,REVIEW_NEEDED,UAE Labour Law Art.51,Employee approaching 5 year threshold. Gratuity calculation changes from 21 to 30 days per year after 5 years.
+CHK022,overtime_hours_daily,WARNING,payroll_run,EMP011,ot_hrs,30,,,true,HIGH_VOLUME,UAE Labour Law Art.66,30 overtime hours in one month is high. UAE law limits overtime to 2 hours per day maximum. Verify compliance.
+CHK023,social_insurance_uae_national,WARNING,payroll_run,EMP001,social_ins_ded,0,,,true,MISSING_DEDUCTION,GPSSA Federal Law 7/1999,UAE national (EMP001) has zero GPSSA deduction. UAE nationals must contribute to pension. Verify enrollment.
+CHK024,maternity_leave_entitlement,PASS,leave_records,EMP008,days_taken,60,60,,false,COMPLIANT,UAE Labour Law Art.30,Maternity leave of 60 days is exactly the legal entitlement. Compliant.
+CHK025,leave_balance_negative,PASS,leave_records,EMP006,leave_balance,0,0,,false,COMPLIANT,UAE Labour Law Art.75,Zero balance after taking allocated accrual. No negative balance.

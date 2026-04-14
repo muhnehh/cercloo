@@ -1,0 +1,68 @@
+source_file,original_column,correct_canonical_mapping,canonical_table,data_type,is_required,compliance_relevant,notes
+employee_master,emp_no,employee_id,employees,string,true,false,Primary key
+employee_master,emp_nm,full_name,employees,string,true,false,
+employee_master,joining_dt,hire_date,employees,date,true,true,Multiple date formats used
+employee_master,dept_cd,department_code,employees,string,true,false,
+employee_master,desig,job_title,employees,string,true,false,
+employee_master,basic_sal,base_salary,contracts,decimal,true,true,WPS required field
+employee_master,housing_all,housing_allowance,contracts,decimal,false,true,WPS required field
+employee_master,trans_all,transport_allowance,contracts,decimal,false,true,WPS required field
+employee_master,nationality_cd,nationality,employees,string,true,true,UAE labor law requires this
+employee_master,visa_typ,visa_type,employees,string,true,true,Required for non-UAE nationals
+employee_master,visa_exp,visa_expiry_date,employees,date,true,true,Alert if within 60 days
+employee_master,passport_no,passport_number,employees,string,false,true,Required for non-UAE nationals
+employee_master,passport_exp,passport_expiry_date,employees,date,false,true,Alert if within 90 days
+employee_master,national_id,emirates_id,employees,string,false,true,Required for UAE nationals
+employee_master,mobile_no,phone_number,employees,string,false,false,
+employee_master,marital_stat,marital_status,employees,string,false,false,
+employee_master,gender_cd,gender,employees,string,true,false,
+employee_master,dob,date_of_birth,employees,date,true,false,
+employee_master,contract_typ,contract_type,contracts,string,true,true,Limited vs Unlimited critical for gratuity
+employee_master,probation_end,probation_end_date,contracts,date,false,true,Max 6 months UAE law
+employee_master,notice_per,notice_period_days,contracts,integer,true,true,Minimum 30 days UAE law
+employee_master,annual_leave_bal,annual_leave_balance,leave_balances,decimal,false,true,Min 30 days after 1 year
+employee_master,sick_leave_bal,sick_leave_balance,leave_balances,decimal,false,true,
+employee_master,yr_of_service,years_of_service,employees,decimal,false,true,Used for gratuity calculation
+employee_master,bank_acct,bank_account_number,payroll_accounts,string,false,true,WPS required
+employee_master,iban_no,iban,payroll_accounts,string,false,true,WPS preferred format
+employee_master,wps_id,wps_identifier,payroll_accounts,string,false,true,Mandatory for WPS
+employee_master,status_cd,employment_status,employees,string,true,false,
+payroll_run,pay_period,payroll_period,payroll_runs,string,true,false,YYYY-MM format
+payroll_run,emp_no,employee_id,payroll_runs,string,true,false,Foreign key to employees
+payroll_run,basic_sal,base_salary,payroll_runs,decimal,true,true,Must match contract
+payroll_run,housing_all,housing_allowance,payroll_runs,decimal,false,true,
+payroll_run,trans_all,transport_allowance,payroll_runs,decimal,false,true,
+payroll_run,food_all,food_allowance,payroll_runs,decimal,false,false,
+payroll_run,phone_all,phone_allowance,payroll_runs,decimal,false,false,
+payroll_run,total_allowances,total_allowances,payroll_runs,decimal,false,true,
+payroll_run,ot_hrs,overtime_hours,payroll_runs,decimal,false,true,UAE max 2hrs/day overtime
+payroll_run,ot_rate_multiplier,overtime_rate_multiplier,payroll_runs,decimal,false,true,Min 1.25x UAE law
+payroll_run,ot_amt,overtime_amount,payroll_runs,decimal,false,true,
+payroll_run,gross_pay,gross_salary,payroll_runs,decimal,true,true,WPS required
+payroll_run,income_tax_ded,income_tax_deduction,payroll_runs,decimal,false,false,Zero in UAE
+payroll_run,social_ins_ded,social_insurance_deduction,payroll_runs,decimal,false,true,GPSSA for UAE nationals
+payroll_run,loan_ded,loan_deduction,payroll_runs,decimal,false,false,
+payroll_run,other_ded,other_deductions,payroll_runs,decimal,false,false,
+payroll_run,total_deductions,total_deductions,payroll_runs,decimal,false,false,
+payroll_run,net_pay,net_salary,payroll_runs,decimal,true,true,WPS disbursement amount
+payroll_run,payment_method,payment_method,payroll_runs,string,true,true,Must be WPS in UAE
+payroll_run,payment_status,payment_status,payroll_runs,string,true,false,
+payroll_run,processed_by,processed_by,payroll_runs,string,false,false,
+payroll_run,processed_dt,processed_date,payroll_runs,date,true,false,
+payroll_run,remarks,notes,payroll_runs,string,false,false,
+leave_records,leave_id,leave_record_id,leave_records,string,true,false,Primary key
+leave_records,emp_no,employee_id,leave_records,string,true,false,Foreign key
+leave_records,leave_cat,leave_category,leave_records,string,true,false,
+leave_records,leave_typ,leave_type_code,leave_records,string,true,true,AL/SL/ML etc
+leave_records,start_dt,leave_start_date,leave_records,date,true,false,
+leave_records,end_dt,leave_end_date,leave_records,date,true,false,
+leave_records,days_taken,days_taken,leave_records,decimal,true,true,
+leave_records,days_approved,days_approved,leave_records,decimal,true,false,
+leave_records,leave_balance,leave_balance_remaining,leave_balances,decimal,false,true,Check vs entitlement
+leave_records,yr_of_service,years_of_service,leave_records,decimal,false,true,Affects entitlement
+leave_records,annual_entitlement,annual_leave_entitlement,leave_records,integer,false,true,Min 30 UAE after 1yr
+leave_records,carry_fwd_days,carried_forward_days,leave_balances,decimal,false,true,Max 30 days UAE
+leave_records,pay_status,leave_pay_status,leave_records,string,true,true,
+leave_records,approved_by,approved_by,leave_records,string,false,false,
+leave_records,applied_dt,application_date,leave_records,date,false,false,
+leave_records,remarks,notes,leave_records,string,false,false,

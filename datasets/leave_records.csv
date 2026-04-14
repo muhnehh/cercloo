@@ -1,0 +1,32 @@
+leave_id,emp_no,emp_name,leave_type,start_date,end_date,days_taken,days_approved,leave_balance,carry_forward,annual_entitlement,yr_of_service,status,remarks
+LV001,EMP001,Ahmed Al Mansoori,Annual Leave,2024-01-15,2024-01-25,10,10,20,8,30,4.0,Paid,VIOLATION: Carry forward exceeds max 5 days (tenure < 3yr)
+LV002,EMP002,Sarah Johnson,Annual Leave,2024-02-01,2024-02-09,8,8,22,12,30,5.0,Paid,VIOLATION: Carry forward exceeds max 10 days
+LV003,EMP003,Mohammed Al Rashidi,Annual Leave,2024-01-20,2024-01-31,10,10,10,0,20,4.5,Paid,VIOLATION: Annual entitlement only 20 days instead of 30
+LV004,EMP004,Priya Sharma,Annual Leave,2024-02-12,2024-02-20,8,8,4,8,12,1.8,Paid,VIOLATION: Entitlement below 30 days minimum + carry forward excess
+LV005,EMP005,Khalid Al Zaabi,Annual Leave,2024-03-01,2024-03-14,14,14,16,15,30,9.2,Paid,VIOLATION: Carry forward exceeds max 10 days
+LV006,EMP006,Fatima Al Nuaimi,Annual Leave,2024-02-20,2024-02-22,2,2,8,0,10,0.5,Paid,OK - First year accrual correct
+LV007,EMP007,Raj Patel,Annual Leave,2024-01-08,2024-01-19,10,10,20,20,30,4.2,Paid,VIOLATION: Carry forward 20 days exceeds 5-day limit
+LV008,EMP008,Aisha Bint Sultan,Maternity Leave,2024-01-01,2024-03-20,60,60,30,18,60,6.2,Paid,VIOLATION: Carry forward exceeds 10 days
+LV009,EMP009,John Williams,Annual Leave,2024-02-05,2024-02-09,5,5,15,6,20,2.8,Paid,VIOLATION: Annual entitlement only 20 days
+LV010,EMP010,Nour Al Hamdan,Annual Leave,2024-03-18,2024-03-22,5,5,25,12,30,7.3,Paid,VIOLATION: Carry forward exceeds 10 days
+LV011,EMP011,Tariq Hassan,Annual Leave,2024-01-22,2024-01-26,5,5,10,2,15,1.0,Paid,VIOLATION: First year entitlement should be 2 days/month
+LV012,EMP012,Lina Khoury,Annual Leave,2024-02-26,2024-03-01,5,5,25,14,30,3.9,Paid,VIOLATION: Carry forward exceeds max 10 days
+LV013,EMP013,Sanjay Mehta,Annual Leave,2024-01-29,2024-02-09,10,10,20,28,30,6.5,Paid,VIOLATION: Carry forward 28 days way exceeds 10-day limit
+LV014,EMP014,Omar Al Farsi,Annual Leave,2024-03-04,2024-03-08,5,5,20,10,25,2.6,Paid,VIOLATION: Annual entitlement only 25 days instead of 30
+LV015,EMP015,Maria Santos,Annual Leave,2024-02-19,2024-02-21,2,2,0,0,2,0.2,Paid,OK - New employee less than 6 months
+LV016,EMP016,Hamad Al Kuwari,Annual Leave,2024-01-01,2024-01-05,5,5,25,22,30,10.9,Paid,VIOLATION: Carry forward 22 days exceeds 10-day limit
+LV017,EMP017,Deepa Nair,Annual Leave,2024-03-11,2024-03-15,5,5,13,5,18,1.6,Paid,VIOLATION: Annual entitlement only 18 days
+LV018,EMP018,Youssef Mansour,Annual Leave,2024-02-12,2024-02-16,5,5,10,15,30,4.6,Paid,VIOLATION: Carry forward 15 exceeds max 10 days
+LV019,EMP019,Emma Clarke,Annual Leave,2024-03-25,2024-03-29,4,4,18,8,22,1.2,Paid,VIOLATION: Annual entitlement only 22 days
+LV020,EMP020,Ali Al Balushi,Annual Leave,2024-01-15,2024-01-26,10,10,20,20,30,9.2,Paid,VIOLATION: Carry forward 20 exceeds max 10 days
+LV021,EMP001,Ahmed Al Mansoori,Annual Leave,2023-12-04,2023-12-15,10,10,30,8,30,3.8,Paid,Previous year with violations
+LV022,EMP021,Hassan Al Kaabi,Annual Leave,2024-02-20,2024-02-28,8,8,2,0,10,1.0,Paid,OK - Pilot new hire
+LV023,EMP022,Jessica Martinez,Annual Leave,2024-03-01,2024-03-08,7,7,13,5,20,2.8,Paid,OK - HR Coordinator
+LV024,EMP023,Khalifa Al Shehhi,Annual Leave,2024-02-15,2024-02-23,8,8,22,10,30,6.3,Paid,OK - Operations Manager
+LV025,EMP024,Linda Chen,Annual Leave,2024-01-30,2024-02-06,7,7,11,4,18,1.9,Paid,VIOLATION: Carry forward 4 exceeds 5-day limit for tenure < 3yr
+LV026,EMP025,Faisal Al Mazrouei,Annual Leave,2024-03-10,2024-03-22,12,12,18,25,30,8.8,Paid,VIOLATION: Carry forward exceeds 10 days
+LV027,EMP026,Victoria Smith,Annual Leave,2024-02-05,2024-02-16,10,10,20,12,30,5.6,Paid,OK - Marketing Manager
+LV028,EMP027,Mohammed Bin Rashid,Annual Leave,2024-01-20,2024-02-02,12,12,18,18,30,10.1,Paid,OK - Regional Sales Head
+LV029,EMP028,Sophie Laurent,Annual Leave,2024-02-20,2024-03-01,10,10,12,6,22,5.2,Paid,OK - L&D Coordinator
+LV030,EMP029,Ibrahim Al Ketbi,Annual Leave,2024-01-15,2024-01-25,10,10,20,16,30,7.5,Paid,OK - Contracts Manager
+LV031,EMP030,Michelle Wong,Annual Leave,2024-02-12,2024-02-20,8,8,8,3,16,1.8,Paid,IT Support Lead - new hire
