@@ -2,13 +2,36 @@
 
 ## about
 
-cerclo includes an agentic hr data migration flow. it profiles csv files, suggests canonical column mappings, runs compliance checks, and writes reports and review queues for the next step.
+cerclo is an agentic hr data migration platform for companies moving from messy legacy sheets to clean, compliant hr data.
 
-this project was also inspired after a failed interview with a yc backed company doing similar work and after seeing that they had raised a 12m series a. that moment pushed me to build a simpler version of the idea in my own way.
+it takes raw employee, payroll, and leave exports, maps columns to a canonical schema with llm + rag, runs compliance checks, and returns clean outputs plus a review queue.
+
+the result is less manual cleanup, fewer risky errors, and faster migration go-live.
+
+## why this matters
+
+hr migration is still slow, manual, and error-prone in many teams.
+
+one bad mapping can break payroll, leave balances, visa tracking, or compliance reporting.
+
+cerclo turns that into a repeatable workflow that can be reviewed and improved over time.
+
+## what makes this different
+
+- agentic loop: discover, map, evaluate, check, export
+- rag-first mapping: retrieves relevant fields before llm decisions
+- compliance built in: checks mapped records before final export
+- review-ready output: low-confidence mappings are separated for human review
 
 ## keywords
 
-hr data migration, agentic workflow, csv profiling, column mapping, llm mapping, rag retrieval, compliance checks, uae labor rules, ksa labor rules, faiss vector search, streamlit app, review queue, export reports
+hr data migration, agentic workflow, llm mapping, rag retrieval, schema mapping, payroll migration, leave migration, compliance checks, uae labor rules, ksa labor rules, faiss vector search, review queue, streamlit
+
+## inspiration
+
+this project was inspired after i lost an interview with a yc backed company doing similar work that later raised a 12m series a.
+
+that loss became fuel to build a practical, open version of the idea in my own way.
 
 ## structure
 
