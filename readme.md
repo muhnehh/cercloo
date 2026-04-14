@@ -1,6 +1,14 @@
 # cerclo hr replica agent
 
-cerclo turns messy hr exports into mapped, checked, and exportable data. it profiles csv files, suggests canonical column mappings, runs compliance checks, and writes reports and review queues for the next step.
+## about
+
+cerclo includes an agentic hr data migration flow. it profiles csv files, suggests canonical column mappings, runs compliance checks, and writes reports and review queues for the next step.
+
+this project was also inspired after a failed interview with a yc backed company doing similar work and after seeing that they had raised a 12m series a. that moment pushed me to build a simpler version of the idea in my own way.
+
+## keywords
+
+hr data migration, agentic workflow, csv profiling, column mapping, llm mapping, rag retrieval, compliance checks, uae labor rules, ksa labor rules, faiss vector search, streamlit app, review queue, export reports
 
 ## structure
 
@@ -37,6 +45,20 @@ tests/                        test suite
 - evaluates mappings against labels when they are available
 - runs compliance checks for the mapped records
 - exports csv, json, and markdown artifacts for review
+
+## what i learned
+
+i started by looking at messy hr csv files and asking what each column really means. the profiler helps me do that by showing names, types, nulls, and sample values. that part is important because you cannot map data well if you do not first understand the data.
+
+next, i used llms and rag. rag means i do not send everything to the model at once. i first search for similar fields, then i give only the useful context to the model. this is better than stuffing the whole file into the prompt because it is simpler, faster, and usually gives cleaner answers.
+
+then i used the compliance checker. this part turns rules into code, so the system can flag problems before they become bigger issues. that is useful because hr mistakes can affect pay, leave, visas, and legal compliance.
+
+the agentic part is the control loop. it does not only run one fixed script. it discovers, plans, acts, checks results, and exports what it found. that is why it feels more like an agent than a plain pipeline.
+
+## why this is better
+
+this is better than a simple manual spreadsheet process because it is repeatable, faster, and easier to review. it is also better than sending random text to an llm because the rag step keeps the prompt focused on the right fields. the compliance layer also gives a second check, so the result is not just a guess.
 
 ## how to run
 
@@ -129,6 +151,18 @@ sequenceDiagram
 - the local ollama path is preferred for fast offline mapping
 - the agent falls back to other modes when a backend is unavailable
 - generated outputs and cache files are not meant to be committed
+
+## how this can be improved
+
+- add more labeled hr datasets so the mappings can learn from more examples
+- add more country-specific labor rules and validation checks
+- improve the prompt templates for edge cases and short abbreviations
+- add better tests for the agent loop and export files
+- add a small web review screen for approving low-confidence mappings
+
+## pull requests
+
+pull requests are welcome for fixes, better rules, better prompts, more examples, or clearer docs.
 
 ## tests
 
