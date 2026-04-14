@@ -25,15 +25,17 @@ streamlit run app.py
 
 **Access at:** `http://localhost:8505`
 
-## Agent Mode
+## agent
 
-Run the agentic demo with:
+run the agent demo:
 
 ```bash
 python demo_agent.py
 ```
 
-This version plans the run, executes the tools, evaluates mappings, stores memory, and exports artifacts automatically.
+this is the version that thinks in steps, uses the tools, checks its own work, and writes the results out cleanly.
+
+if you want the short version: it starts with the data, plans the next move, runs the pipeline, and keeps going until the job is done.
 
 ---
 

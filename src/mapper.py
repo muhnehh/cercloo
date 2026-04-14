@@ -20,6 +20,7 @@ Educational point:
 """
 
 import json
+import re
 import os
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
@@ -231,6 +232,91 @@ Remember:
 """
         
         return schema_explanation
+
+    def build_compact_prompt(
+        self,
+        profiles: Dict[str, Dict[str, Any]],
+        max_files: int = 2,
+        max_columns_per_file: int = 6,
+        max_samples_per_column: int = 1,
+    ) -> str:
+        """
+        Build a compact prompt optimized for local Ollama latency.
+
+        Local models can time out on large payloads. This keeps enough signal
+        for mapping while reducing token and parsing overhead.
+        """
+
+        prompt = (
+            "Map HR columns to canonical fields.\n"
+            "Canonical by table:\n"
+            "E=employee_id,name,national_id,passport_number,nationality,hire_date,job_title,department,visa_type,visa_expiry\n"
+            "C=contract_id,employee_id,start_date,end_date,probation_period_months,base_salary,housing_allowance,transport_allowance\n"
+            "L=employee_id,annual_leave_entitlement,annual_leave_used,annual_leave_balance,sick_leave_entitlement,sick_leave_used\n"
+            "P=employee_id,period_start,period_end,pay_date,base_salary,overtime_hours_weekday,overtime_hours_friday,overtime_rate\n"
+            "Input columns:\n"
+        )
+
+        file_count = 0
+        for source_name, profile in profiles.items():
+            if file_count >= max_files:
+                break
+            file_count += 1
+
+            prompt += f"\n[{source_name}]\n"
+            columns = self._select_informative_columns(
+                profile.get("columns", []),
+                max_columns_per_file,
+            )
+            for col_profile in columns:
+                col_name = col_profile.get("name", "")
+                col_type = col_profile.get("inferred_type", "unknown")
+                samples = col_profile.get("sample_values", [])[:max_samples_per_column]
+                sample_text = str(samples[0])[:12] if samples else "na"
+                prompt += f"- {col_name}|{col_type}|{sample_text}\n"
+
+        prompt += (
+            "Return ONLY JSON: {\"mappings\":[{\"source_column\":\"...\","
+            "\"suggested_target\":\"...\",\"target_table\":\"employees|contracts|leave_balances|payroll_runs\","
+            "\"confidence\":0.0,\"reasoning\":\"short\",\"data_type\":\"...\"}]}"
+        )
+
+        return prompt
+
+    def _select_informative_columns(self, columns: List[Dict[str, Any]], max_columns: int) -> List[Dict[str, Any]]:
+        """Pick columns with strongest mapping signal to keep prompt tiny but useful."""
+
+        if not columns:
+            return []
+
+        keyword_pattern = re.compile(
+            r"emp|name|id|visa|pass|national|hire|join|dept|job|salary|allow|leave|"
+            r"overtime|ot|probation|contract|period|pay|tax|gratuity",
+            re.IGNORECASE,
+        )
+
+        scored = []
+        for col in columns:
+            col_name = str(col.get("name", ""))
+            inferred_type = str(col.get("inferred_type", ""))
+            null_pct = float(col.get("null_percentage", 100)) if col.get("null_percentage") is not None else 100.0
+
+            score = 0
+            if keyword_pattern.search(col_name):
+                score += 5
+            if inferred_type in {"date", "numeric", "identifier", "string"}:
+                score += 2
+            if null_pct <= 20:
+                score += 2
+            elif null_pct <= 50:
+                score += 1
+
+            # Slight bonus for shorter names (often coded exports) since these need mapping most.
+            score += 1 if len(col_name) <= 12 else 0
+            scored.append((score, col))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [col for _, col in scored[:max_columns]]
     
     def map_columns_with_llm(self, profiles: Dict[str, Dict[str, Any]], retriever=None) -> List[ColumnMapping]:
         """
@@ -293,19 +379,19 @@ Remember:
             for mn in model_names:
                 print(f"      - {mn}")
             
-            # Prefer deepseek or qwen models for better performance
+            # Prefer qwen first for faster local inference, then deepseek.
             model_name = None
             for mn in model_names:
-                if "deepseek" in mn.lower():
+                if "qwen" in mn.lower():
                     model_name = mn
-                    print(f"   [OK] Using Deepseek model: {model_name}")
+                    print(f"   [OK] Using Qwen model: {model_name}")
                     break
             
             if not model_name:
                 for mn in model_names:
-                    if "qwen" in mn.lower():
+                    if "deepseek" in mn.lower():
                         model_name = mn
-                        print(f"   [OK] Using Qwen model: {model_name}")
+                        print(f"   [OK] Using Deepseek model: {model_name}")
                         break
             
             if not model_name:
@@ -321,82 +407,154 @@ Remember:
             print(f"   [ERROR] Ollama check failed: {e}")
             return None
         
-        # Build the prompt (with optional RAG)
-        if hasattr(self, '_retriever') and self._retriever:
-            print(f"   Using RAG retrieval for smart context...")
-            prompt = self.build_prompt_with_rag(profiles, self._retriever)
-        else:
-            print(f"   Using standard prompt (no RAG)")
-            prompt = self.build_prompt(profiles)
-        
-        print(f"   Sending to Ollama ({model_name})...")
+        # Build a compact prompt for Ollama to reduce latency/timeouts.
+        # RAG is intentionally skipped here because local inference speed
+        # is the bottleneck and compact context is more reliable.
+        prompt = self.build_compact_prompt(
+            profiles,
+            max_files=2,
+            max_columns_per_file=6,
+            max_samples_per_column=1,
+        )
+
+        strict_prompt = self._build_ollama_strict_prompt(prompt)
+
+        print(f"   Using compact Ollama prompt")
         print(f"      Prompt size: {len(prompt)} characters")
-        
-        try:
-            # Call Ollama
-            response = requests.post(
-                "http://localhost:11434/api/generate",
-                json={
-                    "model": model_name,
-                    "prompt": prompt,
-                    "stream": False,
-                },
-                timeout=120  # Give Ollama 2 minutes to respond
-            )
-            
-            if response.status_code != 200:
-                print(f"   ✗ Ollama returned status {response.status_code}")
-                return None
-            
-            response_text = response.json()["response"]
-            
-            # Parse JSON from response
+
+        attempts = [
+            ("compact", prompt, 900),
+            ("strict", strict_prompt, 1200),
+        ]
+
+        for attempt_name, attempt_prompt, num_predict in attempts:
+            print(f"   Sending to Ollama ({model_name}) [{attempt_name}]...")
+
             try:
-                # Extract JSON (Ollama often wraps it)
-                if "```json" in response_text:
-                    json_start = response_text.find("```json") + 7
-                    json_end = response_text.find("```", json_start)
-                    response_text = response_text[json_start:json_end].strip()
-                elif "```" in response_text:
-                    json_start = response_text.find("```") + 3
-                    json_end = response_text.find("```", json_start)
-                    response_text = response_text[json_start:json_end].strip()
-                elif "{" in response_text:
-                    # Try to extract JSON object
-                    json_start = response_text.find("{")
-                    json_end = response_text.rfind("}") + 1
-                    response_text = response_text[json_start:json_end]
-                
-                response_json = json.loads(response_text)
-                
-                # Convert to ColumnMapping objects
-                mappings = []
-                for mapping_dict in response_json.get("mappings", []):
-                    mapping = ColumnMapping(
-                        source_column=mapping_dict["source_column"],
-                        suggested_target=mapping_dict["suggested_target"],
-                        confidence=mapping_dict.get("confidence", 0.5),
-                        target_table=mapping_dict.get("target_table", "unknown"),
-                        reasoning=mapping_dict.get("reasoning", ""),
-                        data_type=mapping_dict.get("data_type", "unknown")
-                    )
-                    mappings.append(mapping)
-                
-                print(f"   ✓ Ollama returned {len(mappings)} column mappings\n")
-                return mappings
-            
-            except json.JSONDecodeError as e:
-                print(f"   ✗ Failed to parse Ollama's JSON: {e}")
-                print(f"      First 300 chars: {response_text[:300]}")
-                return None
-        
-        except requests.exceptions.Timeout:
-            print(f"   ✗ Ollama took too long to respond (timeout after 120s)")
-            print(f"      Ollama might be slow on first run or model is large")
-            return None
-        except Exception as e:
-            print(f"   ✗ Ollama call failed: {e}")
-            return None
+                response = requests.post(
+                    "http://localhost:11434/api/generate",
+                    json={
+                        "model": model_name,
+                        "prompt": attempt_prompt,
+                        "stream": False,
+                        "format": "json",
+                        "options": {
+                            "num_ctx": 1536,
+                            "temperature": 0,
+                            "top_p": 0.9,
+                            "repeat_penalty": 1.05,
+                            "num_predict": num_predict,
+                        },
+                    },
+                    timeout=75,
+                )
+
+                if response.status_code != 200:
+                    print(f"   ✗ Ollama returned status {response.status_code}")
+                    continue
+
+                response_text = response.json().get("response", "")
+                mappings = self._parse_ollama_mappings(response_text)
+
+                if mappings:
+                    print(f"   ✓ Ollama returned {len(mappings)} column mappings\n")
+                    return mappings
+
+                print(f"   ✗ Ollama returned 0 column mappings on {attempt_name} attempt")
+
+            except requests.exceptions.Timeout:
+                print(f"   ✗ Ollama timed out on {attempt_name} attempt")
+                continue
+            except TimeoutError:
+                print(f"   ✗ Ollama socket timed out on {attempt_name} attempt")
+                continue
+            except Exception as e:
+                print(f"   ✗ Ollama call failed on {attempt_name} attempt: {e}")
+                continue
+
+        return None
+
+    def _build_ollama_strict_prompt(self, compact_prompt: str) -> str:
+        """Force Ollama to map every listed column and never return an empty array."""
+
+        return (
+            compact_prompt
+            + "\n\nRULES:"
+            + "\n- Return a mapping for every listed input column."
+            + "\n- Never return an empty mappings array."
+            + "\n- If unsure, choose the closest valid target field and confidence 0.4-0.7."
+            + "\n- Output only JSON."
+        )
+
+    def _parse_ollama_mappings(self, response_text: str) -> List[ColumnMapping]:
+        """Parse Ollama output across common JSON shapes and key names."""
+
+        if not response_text:
+            return []
+
+        cleaned = response_text.strip()
+
+        if "```json" in cleaned:
+            json_start = cleaned.find("```json") + 7
+            json_end = cleaned.find("```", json_start)
+            cleaned = cleaned[json_start:json_end].strip()
+        elif "```" in cleaned:
+            json_start = cleaned.find("```") + 3
+            json_end = cleaned.find("```", json_start)
+            cleaned = cleaned[json_start:json_end].strip()
+        elif "{" in cleaned:
+            json_start = cleaned.find("{")
+            json_end = cleaned.rfind("}") + 1
+            cleaned = cleaned[json_start:json_end]
+
+        try:
+            response_json = json.loads(cleaned)
+        except json.JSONDecodeError:
+            return []
+
+        raw_mappings = []
+        if isinstance(response_json, list):
+            raw_mappings = response_json
+        elif isinstance(response_json, dict):
+            for key in ("mappings", "mapping", "results", "columns", "items", "data"):
+                if key in response_json and isinstance(response_json[key], list):
+                    raw_mappings = response_json[key]
+                    break
+            if not raw_mappings and any(isinstance(v, dict) for v in response_json.values()):
+                raw_mappings = [response_json]
+
+        mappings: List[ColumnMapping] = []
+        for mapping_dict in raw_mappings:
+            if not isinstance(mapping_dict, dict):
+                continue
+
+            source_column = mapping_dict.get("source_column") or mapping_dict.get("source") or mapping_dict.get("column") or mapping_dict.get("name")
+            suggested_target = mapping_dict.get("suggested_target") or mapping_dict.get("target") or mapping_dict.get("canonical_field") or mapping_dict.get("mapped_to")
+            target_table = mapping_dict.get("target_table") or mapping_dict.get("table") or mapping_dict.get("canonical_table") or "unknown"
+            confidence = mapping_dict.get("confidence", mapping_dict.get("score", 0.5))
+            reasoning = mapping_dict.get("reasoning") or mapping_dict.get("reason") or mapping_dict.get("explanation") or ""
+            data_type = mapping_dict.get("data_type") or mapping_dict.get("type") or "unknown"
+
+            if not source_column or not suggested_target:
+                continue
+
+            try:
+                confidence = float(confidence)
+            except Exception:
+                confidence = 0.5
+
+            mappings.append(
+                ColumnMapping(
+                    source_column=str(source_column),
+                    suggested_target=str(suggested_target),
+                    confidence=confidence,
+                    target_table=str(target_table),
+                    reasoning=str(reasoning),
+                    data_type=str(data_type),
+                )
+            )
+
+        return mappings
     
     def _try_claude(self, profiles: Dict[str, Dict[str, Any]]) -> Optional[List[ColumnMapping]]:
         """Attempt to use Claude API (requires ANTHROPIC_API_KEY)."""

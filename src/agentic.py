@@ -18,6 +18,7 @@ in a control loop that behaves like an agent: plan -> act -> observe -> adapt.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -297,33 +298,54 @@ class CercliAgent:
             return {"status": "disabled", "reason": "RAG disabled by configuration"}
 
         try:
-            from rag.vector_store import VectorStoreBuilder
-            from rag.retriever import Retriever
-            from embedder import TextEmbedder
-        except ImportError:
-            from src.rag.vector_store import VectorStoreBuilder
-            from src.rag.retriever import Retriever
-            from src.embedder import TextEmbedder
+            try:
+                from rag.vector_store import VectorStoreBuilder
+                from rag.retriever import Retriever
+                from embedder import TextEmbedder
+            except ImportError:
+                from src.rag.vector_store import VectorStoreBuilder
+                from src.rag.retriever import Retriever
+                from src.embedder import TextEmbedder
 
-        canonical_fields: Dict[str, Any] = {}
-        for table_name, table_info in CANONICAL_SCHEMA.items():
-            canonical_fields[table_name] = table_info.get("fields", [])
+            canonical_fields: Dict[str, Any] = {}
+            for table_name, table_info in CANONICAL_SCHEMA.items():
+                canonical_fields[table_name] = table_info.get("fields", [])
 
-        builder = VectorStoreBuilder()
-        vector_store = builder.build(canonical_fields)
-        self.retriever = Retriever(vector_store, TextEmbedder())
+            builder = VectorStoreBuilder()
+            vector_store = builder.build(canonical_fields)
+            self.retriever = Retriever(vector_store, TextEmbedder())
 
-        return {
-            "status": "ok",
-            "vector_count": vector_store.stats().get("total_vectors", 0),
-        }
+            return {
+                "status": "ok",
+                "vector_count": vector_store.stats().get("total_vectors", 0),
+            }
+
+        except Exception as exc:
+            # Keep the agent loop alive even if vector/embedding backend fails.
+            # Mapping can still continue via LLM/heuristic mode.
+            self.retriever = None
+            return {
+                "status": "degraded",
+                "reason": str(exc),
+                "fallback": "continuing without retriever",
+            }
 
     def _map(self) -> Dict[str, Any]:
         mapper = ColumnMapper()
-        self.mappings = mapper.map_columns_with_llm(
-            self.profiles,
-            retriever=self.retriever if self.use_rag else None,
-        )
+
+        force_demo = os.environ.get("CERCLI_FORCE_DEMO", "0") == "1"
+        if force_demo:
+            self.mappings = mapper._demo_mappings(self.profiles)
+        else:
+            try:
+                self.mappings = mapper.map_columns_with_llm(
+                    self.profiles,
+                    retriever=self.retriever if self.use_rag else None,
+                )
+            except Exception as exc:
+                print(f"  map warning: {exc}")
+                print("  map fallback: using deterministic demo mappings")
+                self.mappings = mapper._demo_mappings(self.profiles)
 
         return {
             "status": "ok" if self.mappings else "empty",
@@ -617,13 +639,13 @@ class CercliAgent:
                     if series.empty:
                         continue
                     if column == "annual_leave_used":
-                        record[column] = pd.to_numeric(series, errors="coerce").fillna(0).sum()
+                        record[column] = float(pd.to_numeric(series, errors="coerce").fillna(0).sum())
                     elif column == "annual_leave_entitlement":
                         numeric = pd.to_numeric(series, errors="coerce").dropna()
                         if not numeric.empty:
-                            record[column] = numeric.iloc[-1]
+                            record[column] = self._coerce_value(column, numeric.iloc[-1])
                     else:
-                        record[column] = series.iloc[-1]
+                        record[column] = self._coerce_value(column, series.iloc[-1])
 
                 if "annual_leave_entitlement" in record and "annual_leave_used" in record and "annual_leave_balance" not in record:
                     try:
@@ -635,7 +657,65 @@ class CercliAgent:
 
             return records
 
-        return subset.drop_duplicates(subset=["employee_id"], keep="last").to_dict(orient="records")
+        deduped = subset.drop_duplicates(subset=["employee_id"], keep="last")
+        records = deduped.to_dict(orient="records")
+        normalized_records: List[Dict[str, Any]] = []
+        for row in records:
+            normalized_records.append({
+                key: self._coerce_value(key, value)
+                for key, value in row.items()
+            })
+        return normalized_records
+
+    def _coerce_value(self, column: str, value: Any) -> Any:
+        if value is None:
+            return None
+
+        date_columns = {
+            "hire_date",
+            "visa_expiry",
+            "passport_expiry",
+            "start_date",
+            "end_date",
+            "pay_date",
+            "period_start",
+            "period_end",
+        }
+        int_columns = {"probation_period_months"}
+        float_columns = {
+            "base_salary",
+            "housing_allowance",
+            "transport_allowance",
+            "other_allowances",
+            "annual_leave_entitlement",
+            "annual_leave_used",
+            "annual_leave_balance",
+            "annual_leave_carried_forward",
+            "overtime_hours_weekday",
+            "overtime_hours_friday",
+            "overtime_rate",
+            "eos_gratuity",
+        }
+
+        if column in date_columns:
+            parsed = pd.to_datetime(value, errors="coerce")
+            if pd.isna(parsed):
+                return None
+            return parsed.date()
+
+        if column in int_columns:
+            numeric = pd.to_numeric(value, errors="coerce")
+            if pd.isna(numeric):
+                return 0
+            return int(numeric)
+
+        if column in float_columns:
+            numeric = pd.to_numeric(value, errors="coerce")
+            if pd.isna(numeric):
+                return 0.0
+            return float(numeric)
+
+        return value
 
     def _load_mapping_labels(self) -> Optional[pd.DataFrame]:
         labels_path = self.data_dir / "mapping_labels.csv"
