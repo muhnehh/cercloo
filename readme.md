@@ -60,6 +60,43 @@ outputs/                      generated reports and agent runs
 tests/                        test suite
 ```
 
+## what each folder actually does
+
+this is the practical job of each main part of the repo:
+
+- src: the core product logic lives here. this is where profiling, mapping, rag retrieval, compliance checks, and orchestration happen.
+- src/compliance: this is the rules engine. it contains law-aware checks, violation generation, and the integration layer that runs checks on mapped data.
+- src/rag: this is the retrieval engine. it creates embeddings, stores vectors in faiss, and retrieves similar fields to guide mapping.
+- datasets: this is training/evaluation style input data and labels used for testing mapping quality and compliance behavior.
+- outputs: this is generated runtime output from agent and pipeline runs, including reports, mappings, and review queues.
+- tests: this is where reliability checks should live for unit and integration behavior.
+- app.py: streamlit interface for interactive use.
+- demo files: quick ways to run specific flows (cli, agent, graph rag compliance).
+
+## depth: what i actually built
+
+i built this as a full workflow, not just one script.
+
+first, i built ingestion and profiling so the system can read messy hr exports and describe them in a structured way.
+
+second, i built mapping with llm + rag. instead of guessing directly from raw headers, the system retrieves similar canonical fields first, then maps with better context.
+
+third, i built a compliance layer that checks mapped records for legal and policy issues, so output is not only clean but also safer to use.
+
+fourth, i built an agentic loop that runs discover -> context -> map -> evaluate -> compliance -> export, then writes artifacts teams can review.
+
+fifth, i built export artifacts that are useful in real operations: machine-readable json, human-readable summary markdown, and review queue csv for low-confidence decisions.
+
+## how data moves through the repo
+
+1. input csv files come in through app or demos.
+2. src/ingestion.py profiles columns and builds context.
+3. src/rag and src/mapper.py find likely canonical targets and generate mappings.
+4. src/compliance checks mapped records and flags violations.
+5. src/agentic.py or src/pipeline.py exports outputs into outputs/agent_<timestamp>/.
+
+this means every folder has one clear role in the same end-to-end migration story.
+
 ## what it does
 
 - reads employee, payroll, and leave csv files
@@ -78,6 +115,21 @@ next, i used llms and rag. rag means i do not send everything to the model at on
 then i used the compliance checker. this part turns rules into code, so the system can flag problems before they become bigger issues. that is useful because hr mistakes can affect pay, leave, visas, and legal compliance.
 
 the agentic part is the control loop. it does not only run one fixed script. it discovers, plans, acts, checks results, and exports what it found. that is why it feels more like an agent than a plain pipeline.
+
+## why i used graphrag (and how it is different from normal rag)
+
+i used graphrag because hr data is connected, not isolated. one employee links to contract terms, payroll, leave balances, and compliance rules. a graph view helps keep those relationships clear.
+
+normal rag mostly finds similar text chunks using vector similarity. this is great for many tasks, but it can miss multi-step relationships across records.
+
+graphrag adds structure on top of retrieval. instead of only asking "what text is similar?", it can also ask "what entities are related?" and "how are they connected?".
+
+in simple words:
+
+- normal rag: best when you need nearest matching text snippets fast.
+- graphrag: better when correctness depends on relationships between people, fields, records, and rules.
+
+for this project, graphrag helps when mapping and compliance decisions depend on linked context, not just one column name in isolation.
 
 ## why this is better
 
