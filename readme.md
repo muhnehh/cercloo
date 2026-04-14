@@ -25,6 +25,16 @@ streamlit run app.py
 
 **Access at:** `http://localhost:8505`
 
+## Agent Mode
+
+Run the agentic demo with:
+
+```bash
+python demo_agent.py
+```
+
+This version plans the run, executes the tools, evaluates mappings, stores memory, and exports artifacts automatically.
+
 ---
 
 ## 🎯 What This System Does
