@@ -1,4 +1,4 @@
-# cerclo hr data migration platform
+# cerclo hr replica agent
 
 cerclo turns messy hr exports into mapped, checked, and exportable data. it profiles csv files, suggests canonical column mappings, runs compliance checks, and writes reports and review queues for the next step.
 
